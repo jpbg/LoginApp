@@ -4,7 +4,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -14,12 +16,16 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import br.edu.ifbaiano.loginapp.helper.DBHelper;
+
 public class MainActivity extends AppCompatActivity {
 
-    EditText edtUser;
+    EditText edtUser, edtPassword;
     Button btnLogin;
 
     TextView tvCadastrar;
+    
+    DBHelper myDB;
 
 
     /*
@@ -29,6 +35,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        isLogged();
+
+        myDB = new DBHelper(MainActivity.this);
+        
         //Método responsável pela ligação da activity com o layout produzido.
         setContentView(R.layout.activity_login);
 
@@ -38,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         //Ação necessária para obter em tempo de execução a view (componente) correspondente.
         tvCadastrar = findViewById(R.id.txt_cadastrar);
         edtUser = findViewById(R.id.edtUsuario);
+        edtPassword = findViewById(R.id.edtSenha);
         btnLogin = findViewById(R.id.btnEntrar);
 
 
@@ -51,12 +62,29 @@ public class MainActivity extends AppCompatActivity {
 
                 if(edtUser.getText().toString().isEmpty()){
                     edtUser.setError("Campo obrigatório!");
-                }else{
-                    Toast.makeText(MainActivity.this, "Usuário não cadastrado",
-                            Toast.LENGTH_SHORT).show();
-
+                }else if(edtPassword.getText().toString().isEmpty()) {
+                    edtUser.setError("Campo obrigatório!");
                 }
+                
+               Boolean login = myDB.validarLoginSenha(edtUser.getText().toString(),
+                                                      edtPassword.getText().toString());
 
+                       
+                       if(login){
+                           Toast.makeText(MainActivity.this, "Login com sucesso", Toast.LENGTH_LONG).show();
+
+                           SharedPreferences myPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                           SharedPreferences.Editor myEditor = myPreferences.edit();
+                           myEditor.putString("USER", edtUser.getText().toString());
+                           myEditor.commit();
+
+
+                           Intent it = new Intent(MainActivity.this, MainActivity2.class);
+                           it.putExtra("user", edtUser.getText().toString());
+                           startActivity(it);
+                       }else{
+                           Toast.makeText(MainActivity.this, "Login incorreto", Toast.LENGTH_LONG).show();
+                       }
             }
         });
 
@@ -88,67 +116,21 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+    }
 
+    private void isLogged() {
 
+        SharedPreferences myPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        String user = myPreferences.getString("USER", "");
 
+        if(user.equals("")){
+            return;
+        }else{
+            Intent it = new Intent(getApplicationContext(), MainActivity2.class);
+            it.putExtra("user", user);
+            startActivity(it);
+        }
 
-
-
-
-
-
-
-
-
-
-
-        /*txtNovoCadastro = findViewById(R.id.txtLinkCadastro);
-        edtUser = findViewById(R.id.edtUsuario);
-        btnLogin = findViewById(R.id.btnEntrar);
-
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(edtUser.getText().toString().isEmpty()){
-                    edtUser.setError("Campo obrigatório!");
-                }
-            }
-        });
-
-        progressBar = new ProgressDialog(MainActivity.this);
-
-                txtNovoCadastro.setOnClickListener(new View.OnClickListener() {
-           @Override
-           public void onClick(View view) {
-
-
-               progressBar.setCancelable(true);//you can cancel it by pressing back button
-               progressBar.setMessage("Redirecionando ...");
-
-               progressBar.show();//displays the progress bar
-
-
-               Intent it = new Intent(MainActivity.this, CadastroActivity.class);
-
-
-               it.putExtra("user", edtUser.getText().toString() == null ? "" : edtUser.getText().toString());
-
-
-               startActivity(it);
-
-               }
-               });
-
-
-
-
-
-        Log.d("TAG", "onCreate: ");
-        if(getSupportActionBar() != null){
-
-            getSupportActionBar().hide();
-        }*/
-        /*Toast.makeText(MainActivity.this, "passou create", Toast.LENGTH_SHORT).show();*/
     }
 
     @Override
